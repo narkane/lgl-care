@@ -51,6 +51,13 @@ export default {
       emojiLocation: null,
       numberOfEmojis: 0,
       currentScale: 0,
+      bounds: {
+        ne: null,
+        sw: null,
+      },
+      cellBounds: null,
+      percentBounds: null,
+      geoBounds: null,
     };
   },
   async mounted() {
@@ -456,6 +463,7 @@ export default {
               console.log("flaggo@!");
               console.log(retmap);
               this.map = retmap;
+              this.drawGridsIntoRegion();
               this.listenerHandler(this.map);
               this.emitHandler(this.map);
             });
@@ -517,7 +525,7 @@ export default {
     // eslint-disable-next-line max-statements
     drawGridsIntoRegion() {
       // this.unloadGoogleGrid()
-      this.setBounds();
+      this.setAllBounds();
       this.currentScale = 0; // this.breakLayer()
       // !! create drawLine(percent) method
       const test = { x: 0, y: 0 };
@@ -872,6 +880,38 @@ export default {
         return this.map.getProjection().fromPointToLatLng(point);
       }
       return null;
+    },
+    setAllBounds() {
+      // Set world coordinate bounds into this.bounds
+      this.mercCoords();
+
+      this.cellBounds.ne.x = this.findSqIDByWorldCoords(this.bounds.ne[0]);
+      this.cellBounds.ne.y = this.findSqIDByWorldCoords(this.bounds.ne[1]);
+      this.cellBounds.sw.x = this.findSqIDByWorldCoords(this.bounds.sw[0]);
+      this.cellBounds.sw.y = this.findSqIDByWorldCoords(this.bounds.sw[1]);
+
+      this.percentBounds.ne.x =
+        this.cellBounds.ne.x / Math.pow(29, this.currentScale + 1);
+      this.percentBounds.ne.y =
+        this.cellBounds.ne.y / Math.pow(29, this.currentScale + 1);
+      this.percentBounds.sw.x =
+        this.cellBounds.sw.x / Math.pow(29, this.currentScale + 1);
+      this.percentBounds.sw.y =
+        this.cellBounds.sw.y / Math.pow(29, this.currentScale + 1);
+
+      this.geoBounds.ne = this.map.getBounds().getNorthEast();
+      this.geoBounds.sw = this.map.getBounds().getSouthWest();
+    },
+    mercCoords() {
+      this.bounds.ne = this.coordinatesToPercentage(
+        this.map.getBounds().getNorthEast().lat,
+        this.map.getBounds().getNorthEast().lng
+      );
+      this.bounds.sw = this.coordinatesToPercentage(
+        this.map.getBounds().getSouthWest().lat,
+        this.map.getBounds().getSouthWest().lng
+      );
+      // console.log('boundo!: ', this.bounds.ne)
     },
   },
 };
